@@ -3,6 +3,7 @@ import express from 'express'
 import mongoose from 'mongoose'
 import morgan from 'morgan'
 import authRouter from './routes/authRoutes.js'
+import settingRouter from './routes/settingRoutes.js'
 
 dotenv.config({ path: "./.env" })
 
@@ -15,6 +16,7 @@ app.use(express.json())
 app.use(morgan('combined'))
 // AUTH
 app.use(authRouter);
+app.use(settingRouter);
 
 // CONNECTIONS
 mongoose.connect(DB).then(() => {

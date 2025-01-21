@@ -1,6 +1,9 @@
 import User from '../models/userModel.js'
 import bcryptjs from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import dotenv from 'dotenv'
+
+dotenv.config({ path: "./.env" })
 
 const signUp = async (req, res) => {
     try {
@@ -69,6 +72,26 @@ const tokenValidation = async (req, res) => {
     }
 }
 
+const generateCannyToken = async (req, res) => {
+    console.log(`YOUR CANNY ${process.env.CANNY}`)
+    console.log(req.body.id)
+    try {
+        if (!req.body.id) {
+            return res.status(400).json({msg: 'User ID is required'});
+        }
+        var userData = {
+            avatarURL: "",
+            email: req.body.email,
+            id: req.body.id,
+            name: req.body.name
+          };
+        var response = jwt.sign(userData, process.env.CANNY, {algorithm: 'HS256'});
+        res.status(200).json({body: response })
+    } catch (e) {
+        res.status(500).json({error: e.message});
+    } 
+}
+
 const getUser = async (req, res) => {
     const user = await User.findById(req.user); 
     res.json({...user._doc, token: req.token}); 
@@ -78,5 +101,6 @@ export default {
     signUp,
     signIn,
     tokenValidation,
-    getUser
+    getUser, 
+    generateCannyToken
 };
