@@ -97,6 +97,12 @@ const getUser = async (req, res) => {
     res.json({...user._doc, token: req.token}); 
 }
 
+
+// FEATURE
+const deleteUser = async(req, res) => {
+    res.status(200).json({msg: "hello"})
+}
+
 export default {
     signUp,
     signIn,
