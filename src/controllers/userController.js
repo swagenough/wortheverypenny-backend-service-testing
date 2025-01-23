@@ -100,7 +100,7 @@ const getUser = async (req, res) => {
 
 // FEATURE
 const deleteUser = async(req, res) => {
-    res.status(200).json({msg: "hello"})
+    res.status(200).json({msg: "user deleted!"})
 }
 
 export default {
