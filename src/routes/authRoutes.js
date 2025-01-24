@@ -16,4 +16,7 @@ authRouter.post('/tokenIsValid', userController.tokenValidation)
 // GET USER DATA
 authRouter.get('/', authMiddleware, userController.getUser)
 
+// DELETE USER DATA
+authRouter.delete('/', authMiddleware, userController.deleteUser )
+
 export default authRouter;
