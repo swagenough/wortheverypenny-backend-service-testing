@@ -97,14 +97,23 @@ const getUser = async (req, res) => {
     res.json({...user._doc, token: req.token}); 
 }
 
-const deleteUser = async(req, res) => {
-    res.status(200).json({msg: "user deleted!"})
-}
+const deleteUser = async (req, res) => {
+    try {
+        const user = await User.findByIdAndDelete(req.user);
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+        res.status(200).json({msg: "User deleted Succesfully! ", ...user._doc, token: req.token}); 
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+};
 
 export default {
     signUp,
     signIn,
     tokenValidation,
     getUser, 
-    generateCannyToken
+    generateCannyToken,
+    deleteUser
 };
