@@ -14,13 +14,16 @@ const userSchema = new Schema({
             }, 
             message: 'Please enter a valid email address'
         },
+        trim: true
     },
     subscription: { type: Schema.Types.ObjectId, ref: 'Subscription' },
     password: { type: String, required: true, minlength: 6 },
     transactions: [{ type: Schema.Types.ObjectId, ref: 'Transaction' }],
-    displayName: { type: String, required: true, minlength: 5, default: username },
+    displayName: { type: String, minlength: 5, default: function() { return this.username; } },
     bills: [{ type: Schema.Types.ObjectId, ref: 'Bill' }],
-    profilePicture: { type: String, default: 'https://i.pinimg.com/736x/ec/ca/4c/ecca4c13cf92b76eaceeadaea46454aa.jpg' },
+    paymentNumber: { type: String, default: '' },
+    profilePicture: { type: String, default: 'https://i.pinimg.com/736x/73/cd/09/73cd09f43b4ca5b2d56c152a79ac5c60.jpg' },
+    friendRequests: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     friends: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     bankAccount: [{ type: Schema.Types.ObjectId, ref: 'BankAccount' }],
     debts: { type: Number, default: 0 },
