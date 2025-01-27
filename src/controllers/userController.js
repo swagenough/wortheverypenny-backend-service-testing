@@ -1,29 +1,25 @@
-import User from '../models/userModel.js'
+import User from '../models/user.js'
 import bcryptjs from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
+import { token } from 'morgan'
 
 dotenv.config({ path: "./.env" })
 
 const signUp = async (req, res) => {
     try {
-        const {name, email, password} = req.body
+        const {username, email, password} = req.body
     
         const exsitingUser = await User.findOne({ email })
-        if (exsitingUser) { // Equals to != NULL
+        if (exsitingUser) {
             return res.status(400).json({msg: '⚠️ User with the same email already exists!'})
-        }
-
-        if (password.length < 6) {
-            return res.status(400).json({msg: 'Please enter at least 6 length password'})
         }
 
         const hashedPassword = await bcryptjs.hash(password, 8)
     
         let user = new User({
-            name, 
+            username, 
             email,
-            // RESOLVED: hashedPassword made the validator for password doesn't work, because it's always > 6 length
             password : hashedPassword,
         })
 
@@ -48,7 +44,7 @@ const signIn = async (req, res) => {
         if (!isMatch) {
             return res.status(400).json({msg: 'Incorrect password'})
         }
-
+        // JWT wraps the user id in a token
         const token = jwt.sign({id: user._id}, "passwordKey")
         res.json({token, ...user._doc})
     } catch(e) {
@@ -62,10 +58,10 @@ const tokenValidation = async (req, res) => {
         if (!token) return res.json(false);
         const isVerified = jwt.verify(token, 'passwordKey');
         if (!isVerified) return res.json(false);
-
+        // the id is stored in the token checked if it exists
         const user = await User.findById(isVerified.id);
         if (!user) return res.json(false);
-        // if all valid
+
         res.json(true);
     } catch (e) {
         res.status(500).json({error: e.message});
@@ -73,10 +69,9 @@ const tokenValidation = async (req, res) => {
 }
 
 const generateCannyToken = async (req, res) => {
-    console.log(`YOUR CANNY ${process.env.CANNY}`)
-    console.log(req.body.id)
     try {
-        if (!req.body.id) {
+        const id = req.body.id;
+        if (!id) {
             return res.status(400).json({msg: 'User ID is required'});
         }
         var userData = {
@@ -93,7 +88,7 @@ const generateCannyToken = async (req, res) => {
 }
 
 const getUser = async (req, res) => {
-    const user = await User.findById(req.user); 
+    const user = await User.findById(req.id);
     res.json({...user._doc, token: req.token}); 
 }
 
@@ -109,11 +104,30 @@ const deleteUser = async (req, res) => {
     }
 };
 
+const updateSettings = async (req, res) => {
+    console.log(req.params.id)
+    try {
+        const { displayName, profilePicture, paymentNumber  } = req.body;
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+        user.displayName = displayName;
+        user.profilePicture = profilePicture;
+        user.paymentNumber = paymentNumber;
+        await user.save();
+        res.status(200).json({msg: "User updated Succesfully! "});
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
+
 export default {
     signUp,
     signIn,
     tokenValidation,
     getUser, 
     generateCannyToken,
-    deleteUser
+    deleteUser,
+    updateSettings
 };

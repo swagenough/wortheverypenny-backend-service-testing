@@ -8,6 +8,7 @@ import settingRouter from './routes/settingRoutes.js'
 dotenv.config({ path: "./.env" })
 
 const PORT = process.env.PORT
+const URI = process.env.URI
 const DB = process.env.DB
 const app = express()
 
@@ -19,7 +20,7 @@ app.use(authRouter);
 app.use(settingRouter);
 
 // CONNECTIONS
-mongoose.connect(DB).then(() => {
+mongoose.connect(URI, { dbName: 'worth-every-penny' }).then(() => {
     console.log("Connection Successful")
 }).catch((e) => {
     console.log(e)

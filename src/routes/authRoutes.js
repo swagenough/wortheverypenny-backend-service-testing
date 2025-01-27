@@ -1,11 +1,12 @@
 import express from 'express'
 import userController from '../controllers/userController.js'
 import authMiddleware from '../middlewares/authMiddleware.js'
+import { userValidation } from '../middlewares/userValidation.js'
 
 const authRouter = express.Router()
 
 // SIGN UP ROUTE
-authRouter.post('/api/signup', userController.signUp)
+authRouter.post('/api/signup', userValidation(), userController.signUp)
 
 // SIGN IN ROUTE
 authRouter.post('/api/signin', userController.signIn)
@@ -18,5 +19,8 @@ authRouter.get('/', authMiddleware, userController.getUser)
 
 // DELETE USER DATA
 authRouter.delete('/', authMiddleware, userController.deleteUser )
+
+// UPDATE USER DATA
+authRouter.put('/updateSettings/:id', userController.updateSettings)
 
 export default authRouter;
