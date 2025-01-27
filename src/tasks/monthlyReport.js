@@ -53,8 +53,9 @@ async function generateMonthlyReports() {
     }
 }
 
+// schedule the task to run at the beginning of every month at 00:00
 cron.schedule('0 0 1 * *', () => {
-    console.log('Generating monthly reports...');
+    console.log('STARTED Generating monthly reports...');
     generateMonthlyReports();
 });
 

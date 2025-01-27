@@ -45,7 +45,6 @@ const signIn = async (req, res) => {
         }
 
         if (!user.monthlyReport || user.monthlyReport.length === 0) { 
-            // if the user doesn't have a monthly report, create one
             const newReport = new MonthlyReport({
             user: user._id,
             totalIncome: 0,
