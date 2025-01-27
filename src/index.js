@@ -4,6 +4,7 @@ import mongoose from 'mongoose'
 import morgan from 'morgan'
 import authRouter from './routes/authRoutes.js'
 import settingRouter from './routes/settingRoutes.js'
+import { generateMonthlyReports } from './tasks/monthlyReport.js'
 
 dotenv.config({ path: "./.env" })
 
@@ -22,6 +23,7 @@ app.use(settingRouter);
 // CONNECTIONS
 mongoose.connect(URI, { dbName: 'worth-every-penny' }).then(() => {
     console.log("Connection Successful")
+    generateMonthlyReports();
 }).catch((e) => {
     console.log(e)
 })
