@@ -3,6 +3,9 @@ import bcryptjs from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
 import MonthlyReport from '../models/monthlyReport.js'
+import Subscription from '../models/subscription.js'
+import mongoose from 'mongoose'
+import { json } from 'express'
 
 dotenv.config({ path: "./.env" })
 
@@ -10,8 +13,8 @@ const signUp = async (req, res) => {
     try {
         const {username, email, password} = req.body
     
-        const exsitingUser = await User.findOne({ email })
-        if (exsitingUser) {
+        const existingUser = await User.findOne({ email })
+        if (existingUser) {
             return res.status(400).json({msg: '⚠️ User with the same email already exists!'})
         }
 
@@ -34,7 +37,7 @@ const signIn = async (req, res) => {
     try {
         const {email, password} = req.body
 
-        const user = await User.findOne({email}).populate('monthlyReport')
+        const user = await User.findOne({email}).populate('monthlyReport subscription')
         if (!user) {
             return res.status(400).json({msg: 'User with this email doesn\'t exist!'})
         }
@@ -46,22 +49,35 @@ const signIn = async (req, res) => {
 
         if (!user.monthlyReport || user.monthlyReport.length === 0) { 
             const newReport = new MonthlyReport({
-            user: user._id,
-            totalIncome: 0,
-            totalExpense: 0,
-            spendingCategories: [],
-            recommendations: [],
-            month: new Date().getMonth() + 1,
-            year: new Date().getFullYear(),
+                user: user._id,
+                totalIncome: 0,
+                totalExpense: 0,
+                spendingCategories: [],
+                recommendations: [],
+                month: new Date().getMonth() + 1,
+                year: new Date().getFullYear(),
             });
             await newReport.save();
             user.monthlyReport = [newReport._id];
             await user.save();
         }
 
+        // set user plan to free if not set
+        if (!user.subscription) {
+            const subscription = new Subscription({
+                user: user._id,
+                plan: 'Basic', // Generate a new ObjectId for the plan
+                startDate: new Date(),
+                endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+            });
+            await subscription.save();
+            user.subscription = subscription._id;
+            await user.save();
+        }
+
         // JWT wraps the user id in a token
         const token = jwt.sign({id: user._id}, "passwordKey")
-        res.json({token, ...user._doc})
+        res.status(200).json({token, ...user._doc})
     } catch(e) {
         res.status(500).json({error: e.message})
     }
@@ -103,8 +119,9 @@ const generateCannyToken = async (req, res) => {
 }
 
 const getUser = async (req, res) => {
-    const user = await User.findById(req.id);
-    res.json({...user._doc, token: req.token}); 
+    const user = await User.findById(req.id).populate('monthlyReport subscription');
+    console.log(user)
+    res.status(200).json({...user._doc, token: req.token}); 
 }
 
 const deleteUser = async (req, res) => {
