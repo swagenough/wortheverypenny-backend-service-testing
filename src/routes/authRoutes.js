@@ -20,4 +20,7 @@ authRouter.get('/', authMiddleware, userController.getUser)
 // DELETE USER DATA
 authRouter.delete('/', authMiddleware, userController.deleteUser )
 
+// UPDATE USER DATA
+authRouter.put('/updateSettings/:id', userController.updateSettings)
+
 export default authRouter;

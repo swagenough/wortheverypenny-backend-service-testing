@@ -24,6 +24,7 @@ const userSchema = new Schema({
     paymentNumber: { type: String, default: '' },
     profilePicture: { type: String, default: 'https://i.pinimg.com/736x/73/cd/09/73cd09f43b4ca5b2d56c152a79ac5c60.jpg' },
     friendRequests: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    cash: { type: Number, default: 0 },
     friends: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     bankAccount: [{ type: Schema.Types.ObjectId, ref: 'BankAccount' }],
     debts: { type: Number, default: 0 },

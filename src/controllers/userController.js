@@ -2,6 +2,7 @@ import User from '../models/user.js'
 import bcryptjs from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
+import { token } from 'morgan'
 
 dotenv.config({ path: "./.env" })
 
@@ -43,7 +44,7 @@ const signIn = async (req, res) => {
         if (!isMatch) {
             return res.status(400).json({msg: 'Incorrect password'})
         }
-
+        // JWT wraps the user id in a token
         const token = jwt.sign({id: user._id}, "passwordKey")
         res.json({token, ...user._doc})
     } catch(e) {
@@ -57,7 +58,7 @@ const tokenValidation = async (req, res) => {
         if (!token) return res.json(false);
         const isVerified = jwt.verify(token, 'passwordKey');
         if (!isVerified) return res.json(false);
-
+        // the id is stored in the token checked if it exists
         const user = await User.findById(isVerified.id);
         if (!user) return res.json(false);
 
@@ -103,11 +104,30 @@ const deleteUser = async (req, res) => {
     }
 };
 
+const updateSettings = async (req, res) => {
+    console.log(req.params.id)
+    try {
+        const { displayName, profilePicture, paymentNumber  } = req.body;
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+        user.displayName = displayName;
+        user.profilePicture = profilePicture;
+        user.paymentNumber = paymentNumber;
+        await user.save();
+        res.status(200).json({msg: "User updated Succesfully! "});
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
+
 export default {
     signUp,
     signIn,
     tokenValidation,
     getUser, 
     generateCannyToken,
-    deleteUser
+    deleteUser,
+    updateSettings
 };
