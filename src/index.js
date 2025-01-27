@@ -5,6 +5,7 @@ import morgan from 'morgan'
 import authRouter from './routes/authRoutes.js'
 import settingRouter from './routes/settingRoutes.js'
 import { generateMonthlyReports } from './tasks/monthlyReport.js'
+import cron from 'node-cron'
 
 dotenv.config({ path: "./.env" })
 

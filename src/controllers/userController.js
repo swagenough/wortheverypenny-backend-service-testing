@@ -2,7 +2,7 @@ import User from '../models/user.js'
 import bcryptjs from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
-import { token } from 'morgan'
+import MonthlyReport from '../models/monthlyReport.js'
 
 dotenv.config({ path: "./.env" })
 
@@ -34,16 +34,32 @@ const signIn = async (req, res) => {
     try {
         const {email, password} = req.body
 
-        const user = await User.findOne({email})
+        const user = await User.findOne({email}).populate('monthlyReport')
         if (!user) {
             return res.status(400).json({msg: 'User with this email doesn\'t exist!'})
         }
-
         // hashed password check
         const isMatch = await bcryptjs.compare(password, user.password)
         if (!isMatch) {
             return res.status(400).json({msg: 'Incorrect password'})
         }
+
+        if (!user.monthlyReport || user.monthlyReport.length === 0) { 
+            // if the user doesn't have a monthly report, create one
+            const newReport = new MonthlyReport({
+            user: user._id,
+            totalIncome: 0,
+            totalExpense: 0,
+            spendingCategories: [],
+            recommendations: [],
+            month: new Date().getMonth() + 1,
+            year: new Date().getFullYear(),
+            });
+            await newReport.save();
+            user.monthlyReport = [newReport._id];
+            await user.save();
+        }
+
         // JWT wraps the user id in a token
         const token = jwt.sign({id: user._id}, "passwordKey")
         res.json({token, ...user._doc})
