@@ -5,6 +5,7 @@ import morgan from 'morgan'
 import authRouter from './routes/authRoutes.js'
 import settingRouter from './routes/settingRoutes.js'
 import { generateMonthlyReports } from './tasks/monthlyReport.js'
+import transactionRouter from './routes/transactionRoutes.js'
 
 dotenv.config({ path: "./.env" })
 
@@ -19,6 +20,7 @@ app.use(morgan('combined'))
 // AUTH
 app.use(authRouter);
 app.use(settingRouter);
+app.use(transactionRouter);
 
 // CONNECTIONS
 mongoose.connect(URI, { dbName: 'worth-every-penny' }).then(() => {

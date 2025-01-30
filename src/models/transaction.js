@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
 const TransactionSchema = new Schema({
+    user: { type: Schema.Types.ObjectId, ref: 'User' },
     date: { type: Date, required: true, default: Date.now },
     name: { type: String, required: true },
     amount : { type: Number, required: true },
