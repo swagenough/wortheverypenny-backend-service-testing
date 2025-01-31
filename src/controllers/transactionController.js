@@ -1,11 +1,15 @@
 import Transaction from '../models/transaction.js';
 import MonthlyReport from '../models/monthlyReport.js';
 import User from '../models/user.js';
+import mongoose from 'mongoose'
 
 const addTransaction = async (req, res) => {
     try {
         const {amount, name, paymentMethod, tags, date, category, recurring, description, type, createdAt} = req.body;
         console.log("req.id", req.id);
+
+        console.log("THIS IS REQ BODY")
+        console.log(req.body)
 
         const userOwner = await User.findById(req.id);
         if (!userOwner) {
@@ -60,7 +64,45 @@ const addTransaction = async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 }
+
+const getCategorizedTransactions = async (req, res) => {
+    try {
+        const userId = new mongoose.Types.ObjectId(req.id); // Correctly create ObjectId instance
+
+        const transactions = await Transaction.aggregate([
+            { $match: { user: userId } }, // Filter by user ID
+            {
+                $group: {
+                    _id: {
+                        month: { $dateToString: { format: "%Y-%m", date: "$date" } },
+                        day: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+                    },
+                    transactions: { $push: "$$ROOT" }
+                }
+            },
+            {
+                $group: {
+                    _id: "$_id.month",
+                    days: {
+                        $push: {
+                            day: "$_id.day",
+                            transactions: "$transactions"
+                        }
+                    }
+                }
+            },
+            {
+                $sort: { "_id": -1 } // Sort by month in descending order
+            }
+        ]);
+
+        res.status(200).json({data: transactions});
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+}
     
 export default {
-    addTransaction
+    addTransaction, 
+    getCategorizedTransactions
 }
