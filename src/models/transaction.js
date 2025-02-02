@@ -12,7 +12,7 @@ const TransactionSchema = new Schema({
     category: { type: String },
     recurring: { type: Boolean, default: false },
     currency: { type: String, default: 'Rp' },
-    PaymentMethod: { type: String },
+    source: { type: String },
     createdAt: { type: Date, default: Date.now },
 }, { collection: 'transactions' });
 

@@ -5,10 +5,8 @@ import mongoose from 'mongoose'
 
 const addTransaction = async (req, res) => {
     try {
-        const {amount, name, paymentMethod, tags, date, category, recurring, description, type, createdAt} = req.body;
+        const {amount, name, source, tags, date, category, recurring, description, type, createdAt} = req.body;
         console.log("req.id", req.id);
-
-        console.log("THIS IS REQ BODY")
         console.log(req.body)
 
         const userOwner = await User.findById(req.id);
@@ -23,7 +21,7 @@ const addTransaction = async (req, res) => {
             user: req.id,
             amount,
             name,
-            paymentMethod,
+            source,
             tags,
             date: transactionDate,
             category,

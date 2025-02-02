@@ -118,7 +118,7 @@ const generateCannyToken = async (req, res) => {
 }
 
 const getUser = async (req, res) => {
-    const user = await User.findById(req.id).populate('monthlyReport subscription transactions');
+    const user = await User.findById(req.id).populate('monthlyReport subscription transactions bankAccount');
     console.log(user)
     res.status(200).json({...user._doc, token: req.token}); 
 }
