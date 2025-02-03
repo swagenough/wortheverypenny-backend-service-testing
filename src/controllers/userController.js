@@ -4,8 +4,7 @@ import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
 import MonthlyReport from '../models/monthlyReport.js'
 import Subscription from '../models/subscription.js'
-import mongoose from 'mongoose'
-import { json } from 'express'
+import BlacklistedToken from '../models/blacklistedToken.js'
 
 dotenv.config({ path: "./.env" })
 
@@ -119,7 +118,7 @@ const generateCannyToken = async (req, res) => {
 }
 
 const getUser = async (req, res) => {
-    const user = await User.findById(req.id).populate('monthlyReport subscription');
+    const user = await User.findById(req.id).populate('monthlyReport subscription transactions bankAccount');
     console.log(user)
     res.status(200).json({...user._doc, token: req.token}); 
 }
@@ -150,7 +149,22 @@ const updateSettings = async (req, res) => {
         await user.save();
         res.status(200).json({msg: "User updated Succesfully! "});
     } catch (err) {
+        console.log(err.message)
         res.status(500).json({ error: err.message });
+    }
+}
+
+const logout = async (req, res) => {
+    const token = req.header('x-auth-token');
+    try {
+        const newBlacklistedToken = new BlacklistedToken({
+            token,
+            expiresAt: new Date(new Date().setFullYear(new Date().getFullYear() + 1))
+        });
+        await newBlacklistedToken.save();
+        res.status(200).json({msg: 'Logged out successfully!'});
+    } catch (e) {
+        res.status(500).json({error: e.message});
     }
 }
 
@@ -161,5 +175,6 @@ export default {
     getUser, 
     generateCannyToken,
     deleteUser,
-    updateSettings
+    updateSettings,
+    logout
 };
