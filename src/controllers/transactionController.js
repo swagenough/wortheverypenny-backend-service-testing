@@ -1,13 +1,13 @@
 import Transaction from '../models/transaction.js';
 import MonthlyReport from '../models/monthlyReport.js';
+import BankAccount from '../models/bankAccount.js';
 import User from '../models/user.js';
 import mongoose from 'mongoose'
+import { calculateNextOccurrence } from '../tasks/recurringTransaction.js';
 
 const addTransaction = async (req, res) => {
     try {
-        const {amount, name, source, tags, date, category, recurring, description, type, createdAt} = req.body;
-        console.log("req.id", req.id);
-        console.log(req.body)
+        const { amount, name, source, tags, date, category, recurring, recurrenceInterval, description, type, createdAt } = req.body;
 
         const userOwner = await User.findById(req.id);
         if (!userOwner) {
@@ -26,35 +26,45 @@ const addTransaction = async (req, res) => {
             date: transactionDate,
             category,
             recurring,
+            recurrenceInterval: recurring ? recurrenceInterval : null,
+            nextOccurrence: recurring ? calculateNextOccurrence(recurrenceInterval, transactionDate) : null,
             description,
             type,
-            createdAt
+            createdAt: new Date(createdAt),
         });
         await newTransaction.save();
 
         userOwner.transactions.unshift(newTransaction._id);
-        userOwner.cash += type === 'income' ? amount : -amount;
+        if (source === 'cash') {
+            userOwner.cash += type === 'income' ? amount : -amount;
+        } else {
+            const bankAccount = await BankAccount.findOne({ user: req.id, accountNumber: source });
+            if (bankAccount) {
+                bankAccount.balance += type === 'income' ? amount : -amount;
+                await bankAccount.save();
+            }
+        }
 
-        const monthlyReport = await MonthlyReport.findOne({ user: req.id, month: new Date().getMonth() + 1, year: new Date().getFullYear() }); 
+        const monthlyReport = await MonthlyReport.findOne({ user: req.id, month: new Date().getMonth() + 1, year: new Date().getFullYear() });
 
         if (!monthlyReport) {
-            const monthlyReport = new MonthlyReport({
+            const newMonthlyReport = new MonthlyReport({
                 user: req.id,
                 month: new Date().getMonth() + 1,
                 year: new Date().getFullYear(),
                 totalIncome: 0,
                 totalExpense: 0
             });
-            await monthlyReport.save();
-            userOwner.monthlyReport.unshift(monthlyReport._id);
+            await newMonthlyReport.save();
+            userOwner.monthlyReport.unshift(newMonthlyReport._id);
         }
-        
+
         if (type === 'income') {
             monthlyReport.totalIncome += amount;
         } else {
             monthlyReport.totalExpense += amount;
         }
-  
+
         await monthlyReport.save();
         await userOwner.save();
         res.status(200).json(newTransaction);
