@@ -1,29 +1,27 @@
-import User from '../models/userModel.js'
+import User from '../models/user.js'
 import bcryptjs from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
+import MonthlyReport from '../models/monthlyReport.js'
+import Subscription from '../models/subscription.js'
+import BlacklistedToken from '../models/blacklistedToken.js'
 
 dotenv.config({ path: "./.env" })
 
 const signUp = async (req, res) => {
     try {
-        const {name, email, password} = req.body
+        const {username, email, password} = req.body
     
-        const exsitingUser = await User.findOne({ email })
-        if (exsitingUser) { // Equals to != NULL
+        const existingUser = await User.findOne({ email })
+        if (existingUser) {
             return res.status(400).json({msg: '⚠️ User with the same email already exists!'})
-        }
-
-        if (password.length < 6) {
-            return res.status(400).json({msg: 'Please enter at least 6 length password'})
         }
 
         const hashedPassword = await bcryptjs.hash(password, 8)
     
         let user = new User({
-            name, 
+            username, 
             email,
-            // RESOLVED: hashedPassword made the validator for password doesn't work, because it's always > 6 length
             password : hashedPassword,
         })
 
@@ -38,19 +36,47 @@ const signIn = async (req, res) => {
     try {
         const {email, password} = req.body
 
-        const user = await User.findOne({email})
+        const user = await User.findOne({email}).populate('monthlyReport subscription')
         if (!user) {
             return res.status(400).json({msg: 'User with this email doesn\'t exist!'})
         }
-
         // hashed password check
         const isMatch = await bcryptjs.compare(password, user.password)
         if (!isMatch) {
             return res.status(400).json({msg: 'Incorrect password'})
         }
 
+        if (!user.monthlyReport || user.monthlyReport.length === 0) { 
+            const newReport = new MonthlyReport({
+                user: user._id,
+                totalIncome: 0,
+                totalExpense: 0,
+                spendingCategories: [],
+                recommendations: [],
+                month: new Date().getMonth() + 1,
+                year: new Date().getFullYear(),
+            });
+            await newReport.save();
+            user.monthlyReport = [newReport._id];
+            await user.save();
+        }
+
+        // set user plan to free if not set
+        if (!user.subscription) {
+            const subscription = new Subscription({
+                user: user._id,
+                plan: 'Basic', // Generate a new ObjectId for the plan
+                startDate: new Date(),
+                endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+            });
+            await subscription.save();
+            user.subscription = subscription._id;
+            await user.save();
+        }
+
+        // JWT wraps the user id in a token
         const token = jwt.sign({id: user._id}, "passwordKey")
-        res.json({token, ...user._doc})
+        res.status(200).json({token, ...user._doc})
     } catch(e) {
         res.status(500).json({error: e.message})
     }
@@ -62,10 +88,10 @@ const tokenValidation = async (req, res) => {
         if (!token) return res.json(false);
         const isVerified = jwt.verify(token, 'passwordKey');
         if (!isVerified) return res.json(false);
-
+        // the id is stored in the token checked if it exists
         const user = await User.findById(isVerified.id);
         if (!user) return res.json(false);
-        // if all valid
+
         res.json(true);
     } catch (e) {
         res.status(500).json({error: e.message});
@@ -73,10 +99,9 @@ const tokenValidation = async (req, res) => {
 }
 
 const generateCannyToken = async (req, res) => {
-    console.log(`YOUR CANNY ${process.env.CANNY}`)
-    console.log(req.body.id)
     try {
-        if (!req.body.id) {
+        const id = req.body.id;
+        if (!id) {
             return res.status(400).json({msg: 'User ID is required'});
         }
         var userData = {
@@ -93,8 +118,9 @@ const generateCannyToken = async (req, res) => {
 }
 
 const getUser = async (req, res) => {
-    const user = await User.findById(req.user); 
-    res.json({...user._doc, token: req.token}); 
+    const user = await User.findById(req.id).populate('monthlyReport subscription transactions bankAccount');
+    console.log(user)
+    res.status(200).json({...user._doc, token: req.token}); 
 }
 
 const deleteUser = async (req, res) => {
@@ -109,11 +135,46 @@ const deleteUser = async (req, res) => {
     }
 };
 
+const updateSettings = async (req, res) => {
+    console.log(req.params.id)
+    try {
+        const { displayName, profilePicture, paymentNumber  } = req.body;
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+        user.displayName = displayName;
+        user.profilePicture = profilePicture;
+        user.paymentNumber = paymentNumber;
+        await user.save();
+        res.status(200).json({msg: "User updated Succesfully! "});
+    } catch (err) {
+        console.log(err.message)
+        res.status(500).json({ error: err.message });
+    }
+}
+
+const logout = async (req, res) => {
+    const token = req.header('x-auth-token');
+    try {
+        const newBlacklistedToken = new BlacklistedToken({
+            token,
+            expiresAt: new Date(new Date().setFullYear(new Date().getFullYear() + 1))
+        });
+        await newBlacklistedToken.save();
+        res.status(200).json({msg: 'Logged out successfully!'});
+    } catch (e) {
+        res.status(500).json({error: e.message});
+    }
+}
+
 export default {
     signUp,
     signIn,
     tokenValidation,
     getUser, 
     generateCannyToken,
-    deleteUser
+    deleteUser,
+    updateSettings,
+    logout
 };

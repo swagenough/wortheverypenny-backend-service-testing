@@ -8,7 +8,7 @@ const authMiddleware = async (req, res, next) => {
         const isVerified = jwt.verify(token, "passwordKey"); 
         if (!isVerified) return res.status(401).json({msg: 'token verification failed'});
 
-        req.user = isVerified.id;
+        req.id = isVerified.id;
         req.token = token;
         next();
     } catch (e) {
