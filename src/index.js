@@ -7,6 +7,7 @@ import settingRouter from './routes/settingRoutes.js'
 import { generateMonthlyReports } from './tasks/monthlyReport.js'
 import transactionRouter from './routes/transactionRoutes.js'
 import bankRouter from './routes/bankRoutes.js'
+import cors from 'cors'
 
 dotenv.config({ path: "./.env" })
 
@@ -15,6 +16,8 @@ const URI = process.env.URI
 const DB = process.env.DB
 const app = express()
 
+app.use(cors())
+// MIDDLEWARES
 app.use(express.json())
 // LOGGING
 app.use(morgan('combined'))
