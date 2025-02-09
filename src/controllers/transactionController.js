@@ -89,6 +89,9 @@ const getCategorizedTransactions = async (req, res) => {
                 }
             },
             {
+                $sort: { "_id.day": -1 } // Sort by day in descending order within each month
+            },
+            {
                 $group: {
                     _id: "$_id.month",
                     days: {

@@ -19,14 +19,46 @@ const signUp = async (req, res) => {
 
         const hashedPassword = await bcryptjs.hash(password, 8)
     
-        let user = new User({
+        let createdUser = new User({
             username, 
             email,
             password : hashedPassword,
         })
 
-        user = await user.save()
-        res.json(user)
+        await createdUser.save()
+        
+        const user = await createdUser.populate('monthlyReport subscription transactions bankAccount');
+
+        if (!user.monthlyReport || user.monthlyReport.length === 0) { 
+            const newReport = new MonthlyReport({
+                user: user._id,
+                totalIncome: 0,
+                totalExpense: 0,
+                spendingCategories: [],
+                recommendations: [],
+                month: new Date().getMonth() + 1,
+                year: new Date().getFullYear(),
+            });
+            await newReport.save();
+            user.monthlyReport = [newReport._id];
+            await user.save();
+        }
+
+        if (!user.subscription) {
+            const subscription = new Subscription({
+                user: user._id,
+                plan: 'Basic', // Generate a new ObjectId for the plan
+                startDate: new Date(),
+                endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+            });
+            await subscription.save();
+            user.subscription = subscription._id;
+            await user.save();
+        }
+
+        const token = jwt.sign({id: user._id}, "passwordKey")
+        console.log(user)
+        res.status(200).json({token, ...user._doc})
     } catch (e) {
         res.status(500).json({ error: e.message })
     }
@@ -36,7 +68,7 @@ const signIn = async (req, res) => {
     try {
         const {email, password} = req.body
 
-        const user = await User.findOne({email}).populate('monthlyReport subscription transactions bankAccount')
+        const user = await User.findOne({email}).populate('monthlyReport subscription transactions bankAccount');
         if (!user) {
             return res.status(400).json({msg: 'User with this email doesn\'t exist!'})
         }
@@ -76,6 +108,7 @@ const signIn = async (req, res) => {
 
         // JWT wraps the user id in a token
         const token = jwt.sign({id: user._id}, "passwordKey")
+        console.log(user)
         res.status(200).json({token, ...user._doc})
     } catch(e) {
         res.status(500).json({error: e.message})
@@ -119,7 +152,6 @@ const generateCannyToken = async (req, res) => {
 
 const getUser = async (req, res) => {
     const user = await User.findById(req.id).populate('monthlyReport subscription transactions bankAccount');
-    console.log(user)
     res.status(200).json({...user._doc, token: req.token}); 
 }
 
@@ -136,20 +168,32 @@ const deleteUser = async (req, res) => {
 };
 
 const updateSettings = async (req, res) => {
-    console.log(req.params.id)
     try {
-        const { displayName, profilePicture, paymentNumber  } = req.body;
+        const { displayName, paymentNumber  } = req.body;
         const user = await User.findById(req.params.id);
         if (!user) {
             return res.status(404).json({ msg: 'User not found' });
         }
         user.displayName = displayName;
-        user.profilePicture = profilePicture;
         user.paymentNumber = paymentNumber;
         await user.save();
         res.status(200).json({msg: "User updated Succesfully! "});
     } catch (err) {
-        console.log(err.message)
+        res.status(500).json({ error: err.message });
+    }
+}
+
+const updateProfilePicture = async (req, res) => {
+    try {
+        const { profilePicture } = req.body;
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+        user.profilePicture = profilePicture;
+        await user.save();
+        res.status(200).json({msg: "User updated Succesfully! "});
+    } catch (err) {
         res.status(500).json({ error: err.message });
     }
 }
@@ -176,5 +220,6 @@ export default {
     generateCannyToken,
     deleteUser,
     updateSettings,
-    logout
+    logout, 
+    updateProfilePicture
 };
