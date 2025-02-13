@@ -56,7 +56,7 @@ const signUp = async (req, res) => {
             await user.save();
         }
 
-        const token = jwt.sign({id: user._id}, "passwordKey")
+        const token = jwt.sign({id: user._id}, process.env.JWT)
         console.log(user)
         res.status(200).json({token, ...user._doc})
     } catch (e) {
@@ -107,7 +107,7 @@ const signIn = async (req, res) => {
         }
 
         // JWT wraps the user id in a token
-        const token = jwt.sign({id: user._id}, "passwordKey")
+        const token = jwt.sign({id: user._id}, process.env.JWT)
         console.log(user)
         res.status(200).json({token, ...user._doc})
     } catch(e) {
@@ -119,7 +119,7 @@ const tokenValidation = async (req, res) => {
     try {
         const token = req.header('x-auth-token'); 
         if (!token) return res.json(false);
-        const isVerified = jwt.verify(token, 'passwordKey');
+        const isVerified = jwt.verify(token, process.env.JWT);
         if (!isVerified) return res.json(false);
         // the id is stored in the token checked if it exists
         const user = await User.findById(isVerified.id);
