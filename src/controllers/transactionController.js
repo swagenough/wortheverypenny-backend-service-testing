@@ -73,6 +73,49 @@ const addTransaction = async (req, res) => {
     }
 }
 
+const deleteTransaction = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const transaction = await Transaction.findById(id);
+        if (!transaction) {
+            return res.status(404).json({ msg: 'Transaction not found' });
+        }
+
+        const userOwner = await User.findById(req.id);
+        if (!userOwner) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        if (transaction.source === 'cash') {
+            userOwner.cash -= transaction.type === 'income' ? transaction.amount : -transaction.amount;
+        } else {
+            const bankAccount = await BankAccount.findOne({ user: req.id, accountNumber: transaction.source });
+            if (bankAccount) {
+                bankAccount.balance -= transaction.type === 'income' ? transaction.amount : -transaction.amount;
+                await bankAccount.save();
+            }
+        }
+
+        const monthlyReport = await MonthlyReport.findOne({ user: req.id, month: transaction.date.getMonth() + 1, year: transaction.date.getFullYear() });
+        if (monthlyReport) {
+            if (transaction.type === 'income') {
+                monthlyReport.totalIncome -= transaction.amount;
+            } else {
+                monthlyReport.totalExpense -= transaction.amount;
+            }
+            await monthlyReport.save();
+        }
+
+        await transaction.deleteOne();
+        await userOwner.save();
+        res.status(200).json({ msg: 'Transaction deleted' });
+    } catch (e) {
+        console.log(e);
+        res.status(500).json({ error: e.message });
+    }
+}
+
 const getCategorizedTransactions = async (req, res) => {
     try {
         const userId = new mongoose.Types.ObjectId(req.id); // Correctly create ObjectId instance
@@ -87,6 +130,9 @@ const getCategorizedTransactions = async (req, res) => {
                     },
                     transactions: { $push: "$$ROOT" }
                 }
+            },
+            {
+                $sort: { "_id.day": -1 } // Sort by day in descending order within each month
             },
             {
                 $group: {
@@ -109,8 +155,72 @@ const getCategorizedTransactions = async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 }
+
+const getDailyAmountTransactions = async (req, res) => {
+    try {
+        const userId = new mongoose.Types.ObjectId(req.id);
+
+        const firstTransaction = await Transaction.findOne({ user: userId }).sort({ date: 1 });
+        const lastTransaction = await Transaction.findOne({ user: userId }).sort({ date: -1 });
+
+        if (!firstTransaction || !lastTransaction) {
+            return res.status(404).json({ msg: 'No transactions found for the user' });
+        }
+
+        const startDate = new Date(firstTransaction.date);
+        const endDate = new Date(lastTransaction.date);
+
+        const transactions = await Transaction.aggregate([
+            { 
+                $match: { 
+                    user: userId,
+                    date: { $gte: startDate, $lte: endDate }
+                } 
+            },
+            {
+                $group: {
+                    _id: {
+                        day: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+                    },
+                    totalAmount: { $sum: "$amount" },
+                    totalIncome: { $sum: { $cond: [{ $eq: ["$type", "income"] }, "$amount", 0] } },
+                    totalExpense: { $sum: { $cond: [{ $eq: ["$type", "expense"] }, "$amount", 0] } }
+                }
+            },
+            {
+                $sort: { "_id.day": 1 } 
+            }
+        ]);
+
+        const transactionMap = new Map();
+        transactions.forEach(transaction => {
+            transactionMap.set(transaction._id.day, transaction);
+        });
+
+        const allDays = [];
+        for (let d = startDate; d <= endDate; d.setDate(d.getDate() + 1)) {
+            const dayString = d.toISOString().split('T')[0];
+            if (transactionMap.has(dayString)) {
+                allDays.push(transactionMap.get(dayString));
+            } else {
+                allDays.push({
+                    _id: { day: dayString },
+                    totalAmount: 0,
+                    totalIncome: 0,
+                    totalExpense: 0
+                });
+            }
+        }
+
+        res.status(200).json({ data: allDays });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+}
     
 export default {
     addTransaction, 
-    getCategorizedTransactions
+    getCategorizedTransactions, 
+    getDailyAmountTransactions,
+    deleteTransaction
 }

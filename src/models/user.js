@@ -22,7 +22,7 @@ const userSchema = new Schema({
     displayName: { type: String, minlength: 5, default: function() { return this.username; } },
     bills: [{ type: Schema.Types.ObjectId, ref: 'Bill' }],
     paymentNumber: { type: String, default: '' },
-    profilePicture: { type: String, default: 'https://i.pinimg.com/736x/73/cd/09/73cd09f43b4ca5b2d56c152a79ac5c60.jpg' },
+    profilePicture: { type: String, default: '' },
     friendRequests: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     cash: { type: Number, default: 0 },
     friends: [{ type: Schema.Types.ObjectId, ref: 'User' }],

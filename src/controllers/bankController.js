@@ -30,7 +30,7 @@ const addNewBankAccount = async (req, res) => {
         await newBankAccount.save();
         userOwner.bankAccount.unshift(newBankAccount._id);
         await userOwner.save();
-        res.status(200).json(newBankAccount);
+        res.status(200).json({data: newBankAccount});
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

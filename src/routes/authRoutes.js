@@ -7,7 +7,7 @@ import isTokenBlacklisted from '../middlewares/tokenMiddleware.js'
 const authRouter = express.Router()
 
 // SIGN UP ROUTE
-authRouter.post('/api/signup', userValidation(), userController.signUp)
+authRouter.post('/api/signup', userValidation(), userController.signUp, userController.signIn)
 
 // SIGN IN ROUTE
 authRouter.post('/api/signin', userController.signIn)
@@ -20,9 +20,6 @@ authRouter.get('/', authMiddleware, isTokenBlacklisted, userController.getUser)
 
 // DELETE USER DATA
 authRouter.delete('/', authMiddleware, userController.deleteUser )
-
-// UPDATE USER DATA
-authRouter.put('/updateSettings/:id', userController.updateSettings)
 
 // LOGOUT
 authRouter.post('/logout', authMiddleware, userController.logout)
