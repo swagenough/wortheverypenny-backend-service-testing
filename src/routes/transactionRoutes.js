@@ -13,4 +13,7 @@ transactionRouter.get('/transaction/getCategorizedTransactions', authMiddleware,
 // GET ALL TRANSACTIONS
 transactionRouter.get('/transaction/getDailyAmountTransactions', authMiddleware, transactionController.getDailyAmountTransactions)
 
+// DELETE TRANSACTION
+transactionRouter.delete('/transaction/deleteTransaction/:id', authMiddleware, transactionController.deleteTransaction)
+
 export default transactionRouter;

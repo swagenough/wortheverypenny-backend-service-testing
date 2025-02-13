@@ -73,6 +73,49 @@ const addTransaction = async (req, res) => {
     }
 }
 
+const deleteTransaction = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const transaction = await Transaction.findById(id);
+        if (!transaction) {
+            return res.status(404).json({ msg: 'Transaction not found' });
+        }
+
+        const userOwner = await User.findById(req.id);
+        if (!userOwner) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        if (transaction.source === 'cash') {
+            userOwner.cash -= transaction.type === 'income' ? transaction.amount : -transaction.amount;
+        } else {
+            const bankAccount = await BankAccount.findOne({ user: req.id, accountNumber: transaction.source });
+            if (bankAccount) {
+                bankAccount.balance -= transaction.type === 'income' ? transaction.amount : -transaction.amount;
+                await bankAccount.save();
+            }
+        }
+
+        const monthlyReport = await MonthlyReport.findOne({ user: req.id, month: transaction.date.getMonth() + 1, year: transaction.date.getFullYear() });
+        if (monthlyReport) {
+            if (transaction.type === 'income') {
+                monthlyReport.totalIncome -= transaction.amount;
+            } else {
+                monthlyReport.totalExpense -= transaction.amount;
+            }
+            await monthlyReport.save();
+        }
+
+        await transaction.deleteOne();
+        await userOwner.save();
+        res.status(200).json({ msg: 'Transaction deleted' });
+    } catch (e) {
+        console.log(e);
+        res.status(500).json({ error: e.message });
+    }
+}
+
 const getCategorizedTransactions = async (req, res) => {
     try {
         const userId = new mongoose.Types.ObjectId(req.id); // Correctly create ObjectId instance
@@ -178,5 +221,6 @@ const getDailyAmountTransactions = async (req, res) => {
 export default {
     addTransaction, 
     getCategorizedTransactions, 
-    getDailyAmountTransactions
+    getDailyAmountTransactions,
+    deleteTransaction
 }
