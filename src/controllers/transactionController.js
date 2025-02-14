@@ -18,6 +18,7 @@ const addTransaction = async (req, res) => {
 
         const userTimezone = userOwner.timeZone;
         const transactionDate = moment.tz(date, userTimezone).toDate();
+        const currentDate = moment.tz(new Date(), userTimezone).toDate();
 
         const newTransaction = new Transaction({
             user: req.id,
@@ -32,7 +33,7 @@ const addTransaction = async (req, res) => {
             nextOccurrence: recurring ? calculateNextOccurrence(recurrenceInterval, transactionDate) : null,
             description,
             type,
-            createdAt,
+            createdAt: currentDate,
         });
         await newTransaction.save();
 
