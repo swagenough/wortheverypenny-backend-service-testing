@@ -30,7 +30,7 @@ const addTransaction = async (req, res) => {
             nextOccurrence: recurring ? calculateNextOccurrence(recurrenceInterval, transactionDate) : null,
             description,
             type,
-            createdAt: new Date(createdAt),
+            createdAt,
         });
         await newTransaction.save();
 
