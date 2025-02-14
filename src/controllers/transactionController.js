@@ -4,6 +4,7 @@ import BankAccount from '../models/bankAccount.js';
 import User from '../models/user.js';
 import mongoose from 'mongoose'
 import { calculateNextOccurrence } from '../tasks/recurringTransaction.js';
+import moment from 'moment-timezone';
 
 const addTransaction = async (req, res) => {
     try {
@@ -15,7 +16,8 @@ const addTransaction = async (req, res) => {
             return res.status(404).json({ msg: 'User not found' });
         }
 
-        const transactionDate = new Date(date);
+        const userTimezone = userOwner.timeZone;
+        const transactionDate = moment.tz(date, userTimezone).toDate();
 
         const newTransaction = new Transaction({
             user: req.id,

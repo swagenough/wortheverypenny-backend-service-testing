@@ -34,6 +34,7 @@ const userSchema = new Schema({
     savings: { type: Number, default: 0 },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
+    timeZone: { type: String, default: 'Asia/Jakarta' },
 }, { collection: 'users' });
 
 const User = mongoose.model('User', userSchema);
