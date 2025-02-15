@@ -124,18 +124,18 @@ const getCategorizedTransactions = async (req, res) => {
         const userId = new mongoose.Types.ObjectId(req.id); // Correctly create ObjectId instance
 
         const transactions = await Transaction.aggregate([
-            { $match: { user: userId } }, // Filter by user ID
-            {
-                $group: {
-                    _id: {
-                        month: { $dateToString: { format: "%Y-%m", date: "$date" } },
-                        day: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
-                    },
-                    transactions: { $push: "$$ROOT" }
-                }
-            },
-            {
-                $sort: { "_id.day": -1 } // Sort by day in descending order within each month
+             // Filter by user ID
+                        {
+                            $group: {
+                                _id: {
+                                    month: { $dateToString: { format: "%Y-%m", date: "$date", timezone: "Asia/Jakarta" } },
+                                    day: { $dateToString: { format: "%Y-%m-%d", date: "$date", timezone: "Asia/Jakarta" } },
+                                },
+                                transactions: { $push: "$$ROOT" }
+                            }
+                        },
+                        {
+                            $sort: { "_id.day": -1 } // Sort by day in descending order within each month
             },
             {
                 $group: {
