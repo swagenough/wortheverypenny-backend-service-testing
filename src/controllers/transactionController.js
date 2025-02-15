@@ -48,27 +48,35 @@ const addTransaction = async (req, res) => {
             }
         }
 
-        const monthlyReport = await MonthlyReport.findOne({ user: req.id, month: new Date().getMonth() + 1, year: new Date().getFullYear() });
+        const transactionMonth = transactionDate.getMonth() + 1;
+        const transactionYear = transactionDate.getFullYear();
+        const currentMonth = new Date().getMonth() + 1;
+        const currentYear = new Date().getFullYear();
 
-        if (!monthlyReport) {
-            const newMonthlyReport = new MonthlyReport({
+        if (transactionMonth === currentMonth && transactionYear === currentYear) {
+            let monthlyReport = await MonthlyReport.findOne({ user: req.id, month: currentMonth, year: currentYear });
+
+            if (!monthlyReport) {
+            monthlyReport = new MonthlyReport({
                 user: req.id,
-                month: new Date().getMonth() + 1,
-                year: new Date().getFullYear(),
+                month: currentMonth,
+                year: currentYear,
                 totalIncome: 0,
                 totalExpense: 0
             });
-            await newMonthlyReport.save();
-            userOwner.monthlyReport.unshift(newMonthlyReport._id);
-        }
+            await monthlyReport.save();
+            userOwner.monthlyReport.unshift(monthlyReport._id);
+            }
 
-        if (type === 'income') {
+            if (type === 'income') {
             monthlyReport.totalIncome += amount;
-        } else {
+            } else {
             monthlyReport.totalExpense += amount;
+            }
+
+            await monthlyReport.save();
         }
 
-        await monthlyReport.save();
         await userOwner.save();
         res.status(200).json(newTransaction);
     } catch (e) {
@@ -100,14 +108,21 @@ const deleteTransaction = async (req, res) => {
             }
         }
 
-        const monthlyReport = await MonthlyReport.findOne({ user: req.id, month: transaction.date.getMonth() + 1, year: transaction.date.getFullYear() });
-        if (monthlyReport) {
+        const transactionMonth = transaction.date.getMonth() + 1;
+        const transactionYear = transaction.date.getFullYear();
+        const currentMonth = new Date().getMonth() + 1;
+        const currentYear = new Date().getFullYear();
+
+        if (transactionMonth === currentMonth && transactionYear === currentYear) {
+            const monthlyReport = await MonthlyReport.findOne({ user: req.id, month: transactionMonth, year: transactionYear });
+            if (monthlyReport) {
             if (transaction.type === 'income') {
                 monthlyReport.totalIncome -= transaction.amount;
             } else {
                 monthlyReport.totalExpense -= transaction.amount;
             }
             await monthlyReport.save();
+            }
         }
 
         await transaction.deleteOne();
