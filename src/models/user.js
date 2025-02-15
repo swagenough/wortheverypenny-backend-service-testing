@@ -1,5 +1,8 @@
 import mongoose from 'mongoose';
+import moment from 'moment-timezone';
 const Schema = mongoose.Schema;
+
+moment.tz.setDefault('Asia/Jakarta');
 
 const userSchema = new Schema({
     username: { type: String, required: true, unique: true, trim: true, minlength: 5 },
@@ -32,8 +35,8 @@ const userSchema = new Schema({
     language: { type: String, default: 'id' },
     currency: { type: String, default: 'IDR' },
     savings: { type: Number, default: 0 },
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now },
+    createdAt: { type: Date, default:  () => moment().toDate() },
+    updatedAt: { type: Date, default: () => moment().toDate() },
     timeZone: { type: String, default: 'Asia/Jakarta' },
 }, { collection: 'users' });
 

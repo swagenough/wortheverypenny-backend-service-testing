@@ -1,5 +1,8 @@
 import mongoose from 'mongoose';
+import moment from 'moment-timezone';
 const Schema = mongoose.Schema; 
+
+moment.tz.setDefault('Asia/Jakarta');
 
 const monthlyReportSchema = new Schema({
     user: { type: Schema.Types.ObjectId, ref: 'User' },
@@ -14,7 +17,7 @@ const monthlyReportSchema = new Schema({
         }
     ],
     recommendations: [{ type: String }],
-    createdAt: { type: Date, default: Date.now },
+    createdAt: { type: Date, default: () => moment().toDate() },
 }, { collection: 'monthlyReports' }); 
 
 const MonthlyReport = mongoose.model('MonthlyReport', monthlyReportSchema);
