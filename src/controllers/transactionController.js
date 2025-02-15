@@ -161,6 +161,7 @@ const getCategorizedTransactions = async (req, res) => {
     }
 }
 
+// ANALYTICS CHART DATA
 const getDailyAmountTransactions = async (req, res) => {
     try {
         const userId = new mongoose.Types.ObjectId(req.id);
@@ -177,23 +178,23 @@ const getDailyAmountTransactions = async (req, res) => {
 
         const transactions = await Transaction.aggregate([
             { 
-                $match: { 
-                    user: userId,
-                    date: { $gte: startDate, $lte: endDate }
-                } 
+            $match: { 
+                user: userId,
+                date: { $gte: startDate, $lte: endDate }
+            } 
             },
             {
-                $group: {
-                    _id: {
-                        day: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
-                    },
-                    totalAmount: { $sum: "$amount" },
-                    totalIncome: { $sum: { $cond: [{ $eq: ["$type", "income"] }, "$amount", 0] } },
-                    totalExpense: { $sum: { $cond: [{ $eq: ["$type", "expense"] }, "$amount", 0] } }
-                }
+            $group: {
+                _id: {
+                day: { $dateToString: { format: "%Y-%m-%d", date: "$date", timezone: "Asia/Jakarta" } },
+                },
+                totalAmount: { $sum: "$amount" },
+                totalIncome: { $sum: { $cond: [{ $eq: ["$type", "income"] }, "$amount", 0] } },
+                totalExpense: { $sum: { $cond: [{ $eq: ["$type", "expense"] }, "$amount", 0] } }
+            }
             },
             {
-                $sort: { "_id.day": 1 } 
+            $sort: { "_id.day": 1 } 
             }
         ]);
 
