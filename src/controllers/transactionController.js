@@ -4,6 +4,7 @@ import BankAccount from '../models/bankAccount.js';
 import User from '../models/user.js';
 import mongoose from 'mongoose'
 import { calculateNextOccurrence } from '../tasks/recurringTransaction.js';
+import moment from 'moment-timezone';
 
 const addTransaction = async (req, res) => {
     try {
@@ -15,7 +16,9 @@ const addTransaction = async (req, res) => {
             return res.status(404).json({ msg: 'User not found' });
         }
 
-        const transactionDate = new Date(date);
+        const userTimezone = userOwner.timeZone;
+        const transactionDate = moment.tz(date, userTimezone).toDate();
+        const currentDate = moment.tz(new Date(), userTimezone).toDate();
 
         const newTransaction = new Transaction({
             user: req.id,
@@ -30,7 +33,7 @@ const addTransaction = async (req, res) => {
             nextOccurrence: recurring ? calculateNextOccurrence(recurrenceInterval, transactionDate) : null,
             description,
             type,
-            createdAt,
+            createdAt: currentDate,
         });
         await newTransaction.save();
 
@@ -121,32 +124,34 @@ const getCategorizedTransactions = async (req, res) => {
         const userId = new mongoose.Types.ObjectId(req.id); // Correctly create ObjectId instance
 
         const transactions = await Transaction.aggregate([
-            { $match: { user: userId } }, // Filter by user ID
+            { 
+            $match: { user: userId } // Filter by user ID
+            },
             {
-                $group: {
-                    _id: {
-                        month: { $dateToString: { format: "%Y-%m", date: "$date" } },
-                        day: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
-                    },
-                    transactions: { $push: "$$ROOT" }
+            $group: {
+                _id: {
+                month: { $dateToString: { format: "%Y-%m", date: "$date", timezone: "Asia/Jakarta" } },
+                day: { $dateToString: { format: "%Y-%m-%d", date: "$date", timezone: "Asia/Jakarta" } },
+                },
+                transactions: { $push: "$$ROOT" }
+            }
+            },
+            {
+            $sort: { "_id.day": -1 } // Sort by day in descending order within each month
+            },
+            {
+            $group: {
+                _id: "$_id.month",
+                days: {
+                $push: {
+                    day: "$_id.day",
+                    transactions: "$transactions"
                 }
-            },
-            {
-                $sort: { "_id.day": -1 } // Sort by day in descending order within each month
-            },
-            {
-                $group: {
-                    _id: "$_id.month",
-                    days: {
-                        $push: {
-                            day: "$_id.day",
-                            transactions: "$transactions"
-                        }
-                    }
                 }
+            }
             },
             {
-                $sort: { "_id": -1 } // Sort by month in descending order
+            $sort: { "_id": -1 } // Sort by month in descending order
             }
         ]);
 
@@ -156,6 +161,7 @@ const getCategorizedTransactions = async (req, res) => {
     }
 }
 
+// ANALYTICS CHART DATA
 const getDailyAmountTransactions = async (req, res) => {
     try {
         const userId = new mongoose.Types.ObjectId(req.id);
@@ -172,23 +178,23 @@ const getDailyAmountTransactions = async (req, res) => {
 
         const transactions = await Transaction.aggregate([
             { 
-                $match: { 
-                    user: userId,
-                    date: { $gte: startDate, $lte: endDate }
-                } 
+            $match: { 
+                user: userId,
+                date: { $gte: startDate, $lte: endDate }
+            } 
             },
             {
-                $group: {
-                    _id: {
-                        day: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
-                    },
-                    totalAmount: { $sum: "$amount" },
-                    totalIncome: { $sum: { $cond: [{ $eq: ["$type", "income"] }, "$amount", 0] } },
-                    totalExpense: { $sum: { $cond: [{ $eq: ["$type", "expense"] }, "$amount", 0] } }
-                }
+            $group: {
+                _id: {
+                day: { $dateToString: { format: "%Y-%m-%d", date: "$date", timezone: "Asia/Jakarta" } },
+                },
+                totalAmount: { $sum: "$amount" },
+                totalIncome: { $sum: { $cond: [{ $eq: ["$type", "income"] }, "$amount", 0] } },
+                totalExpense: { $sum: { $cond: [{ $eq: ["$type", "expense"] }, "$amount", 0] } }
+            }
             },
             {
-                $sort: { "_id.day": 1 } 
+            $sort: { "_id.day": 1 } 
             }
         ]);
 
