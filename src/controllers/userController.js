@@ -11,11 +11,6 @@ dotenv.config({ path: "./.env" })
 const signUp = async (req, res) => {
     try {
         const {username, email, password} = req.body
-    
-        const existingUser = await User.findOne({ email })
-        if (existingUser) {
-            return res.status(400).json({msg: '⚠️ User with the same email already exists!'})
-        }
 
         const hashedPassword = await bcryptjs.hash(password, 8)
     
