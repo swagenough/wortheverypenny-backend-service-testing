@@ -8,12 +8,12 @@ const userValidation = () => {
         body('password', 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character').matches(/^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/),
         body('username', '⚠️ User with the same username already exists!').custom(async (username) => {
             try {
-                const existingUser = User.findOne({ username })
+                const existingUser = await User.findOne({ username })
                 if (existingUser) {
                     throw new Error()
                 }
             } catch (e) {
-                throw new Error()
+                console.log({error: e })
             }
         }),
         body('email', '⚠️ User with the same email already exists!').custom(async (email) => {
@@ -23,7 +23,7 @@ const userValidation = () => {
                     throw new Error()
                 }
             } catch (e) {
-                throw new Error()
+                console.log({error: e})
             }
         }),
         (req, res, next) => {
