@@ -1,14 +1,17 @@
 import cron from 'node-cron';
 import Transaction from '../models/transaction.js';
+import moment from 'moment-timezone';
+
+moment.tz.setDefault('Asia/Jakarta');
 
 const recurringTransaction = async () => {
     try {
         const recurringTransactions = await Transaction.find({ recurring: true });
         for (const transaction of recurringTransactions) {
-            if (new Date() >= new Date(transaction.nextOccurrence)) {
+            if (moment().isSameOrAfter(moment(transaction.nextOccurrence))) {
                 const newTransaction = new Transaction({
                     user: transaction.user,
-                    date: new Date(),
+                    date: moment().tz('Asia/Jakarta').toDate(),
                     name: transaction.name,
                     amount: transaction.amount,
                     tags: transaction.tags,
@@ -38,6 +41,7 @@ function calculateNextOccurrence(interval, currentDate) {
     switch (interval) {
         case 'daily':
             date.setDate(date.getDate() + 1);
+            return moment(date).tz('Asia/Jakarta').toDate();
             break;
         case 'weekly':
             date.setDate(date.getDate() + 7);
