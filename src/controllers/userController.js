@@ -2,7 +2,12 @@ import User from '../models/user.js'
 import bcryptjs from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
+import BankAccount from '../models/bankAccount.js'
+import Bill from '../models/bill.js'
+import GoalWallet from '../models/goalWallet.js'
 import MonthlyReport from '../models/monthlyReport.js'
+import Notification from '../models/notification.js'
+import Transaction from '../models/transaction.js'
 import Subscription from '../models/subscription.js'
 import BlacklistedToken from '../models/blacklistedToken.js'
 
@@ -152,11 +157,31 @@ const getUser = async (req, res) => {
 
 const deleteUser = async (req, res) => {
     try {
-        const user = await User.findByIdAndDelete(req.user);
+        const userId = req.id;
+
+        const user = await User.findById(userId);
+
         if (!user) {
             return res.status(404).json({ msg: 'User not found' });
         }
-        res.status(200).json({msg: "User deleted Succesfully! ", ...user._doc, token: req.token}); 
+
+        await Transaction.deleteMany({ user: userId });
+
+        await MonthlyReport.deleteMany({ user: userId });
+
+        await Subscription.deleteMany({ user: userId });
+
+        await BankAccount.deleteMany({ user: userId });
+
+        await Bill.deleteMany({ user: userId });
+
+        await GoalWallet.deleteMany({ user: userId });
+
+        await Notification.deleteMany({ user: userId });
+
+        await User.findByIdAndDelete(userId);
+
+        res.status(200).json({ msg: "User deleted successfully!" });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
