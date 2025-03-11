@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import Transaction from '../models/transaction.js';
+import User from '../models/user.js';
 import moment from 'moment-timezone';
 
 moment.tz.setDefault('Asia/Jakarta');
@@ -26,6 +27,7 @@ const recurringTransaction = async () => {
                 });
                 console.log({newTransaction});
                 await newTransaction.save();
+
                 const userOwner = await User.findById(transaction.user);
                 userOwner.transactions.unshift(newTransaction._id);
                 await userOwner.save();
