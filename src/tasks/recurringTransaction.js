@@ -42,7 +42,7 @@ function calculateNextOccurrence(interval, currentDate) {
     switch (interval) {
         case 'daily':
             date.setDate(date.getDate() + 1);
-            return moment(date).tz('Asia/Jakarta').toDate();
+            break;
         case 'weekly':
             date.setDate(date.getDate() + 7);
             break;
@@ -54,11 +54,11 @@ function calculateNextOccurrence(interval, currentDate) {
             break;
         case '30-seconds':
             date.setSeconds(date.getSeconds() + 30);
-            return moment(date).tz('Asia/Jakarta').toDate();
+            break;
         default:
             throw new Error('Invalid recurrence interval');
     }
-    return date;
+    return moment(date).tz('Asia/Jakarta').toDate();
 }
 
 cron.schedule('0 0 * * *', () => {
