@@ -54,7 +54,7 @@ function calculateNextOccurrence(interval, currentDate) {
             break;
         case '30-seconds':
             date.setSeconds(date.getSeconds() + 30);
-            break;
+            return moment(date).tz('Asia/Jakarta').toDate();
         default:
             throw new Error('Invalid recurrence interval');
     }
