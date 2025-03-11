@@ -26,7 +26,9 @@ const recurringTransaction = async () => {
                 });
                 console.log({newTransaction});
                 await newTransaction.save();
+                const userOwner = await User.findById(transaction.user);
                 userOwner.transactions.unshift(newTransaction._id);
+                await userOwner.save();
                 
                 transaction.nextOccurrence = newTransaction.nextOccurrence;
                 await transaction.save();
