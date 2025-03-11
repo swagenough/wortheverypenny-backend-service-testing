@@ -24,7 +24,7 @@ const recurringTransaction = async () => {
                     currency: transaction.currency,
                     source: transaction.source,
                 });
-                
+                console.log({newTransaction});
                 await newTransaction.save();
                 userOwner.transactions.unshift(newTransaction._id);
                 
@@ -61,7 +61,7 @@ function calculateNextOccurrence(interval, currentDate) {
     return moment(date).tz('Asia/Jakarta').toDate();
 }
 
-cron.schedule('0 0 * * *', () => {
+cron.schedule('*/15 * * * * *', () => {
     console.log('STARTED Recurring transactions...');
     recurringTransaction();
 });
