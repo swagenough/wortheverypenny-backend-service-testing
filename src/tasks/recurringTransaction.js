@@ -52,8 +52,8 @@ function calculateNextOccurrence(interval, currentDate) {
         case 'yearly':
             date.setFullYear(date.getFullYear() + 1);
             break;
-        case '10-seconds':
-            date.setSeconds(date.getSeconds() + 10);
+        case '30-seconds':
+            date.setSeconds(date.getSeconds() + 30);
             break;
         default:
             throw new Error('Invalid recurrence interval');
