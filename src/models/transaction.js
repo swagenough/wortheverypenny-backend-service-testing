@@ -14,7 +14,7 @@ const TransactionSchema = new Schema({
     description: { type: String },
     category: { type: String },
     recurring: { type: Boolean, default: false },
-    recurrenceInterval: { type: String, enum: ['daily', 'weekly', 'monthly', 'yearly'], default: null },
+    recurrenceInterval: { type: String, enum: ['daily', 'weekly', 'monthly', 'yearly', '10-seconds'], default: null },
     nextOccurrence: { type: Date },
     currency: { type: String, default: 'Rp' },
     source: { type: String },
