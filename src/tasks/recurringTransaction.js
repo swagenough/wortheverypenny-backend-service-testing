@@ -10,12 +10,14 @@ const recurringTransaction = async () => {
         const recurringTransactions = await Transaction.find({ recurring: true });
         for (const transaction of recurringTransactions) {
             if (moment().isSameOrAfter(moment(transaction.nextOccurrence))) {
+
                 console.log({
-                    msg: "Transaksi valid",
+                    msg: "Recurring Transaction (10 seconds)",
                     moment_time: moment(),
                     transaction_time: moment(transaction.nextOccurrence),
-                    idUser: transaction.user
+                    newTransaction
                 })
+                
                 const newTransaction = new Transaction({
                     user: transaction.user,
                     date: moment().tz('Asia/Jakarta').toDate(),
@@ -25,19 +27,21 @@ const recurringTransaction = async () => {
                     type: transaction.type,
                     description: transaction.description,
                     category: transaction.category,
-                    recurring: transaction.recurring,
-                    recurrenceInterval: transaction.recurrenceInterval,
-                    nextOccurrence: calculateNextOccurrence(transaction.recurrenceInterval, transaction.nextOccurrence),
+                    recurring: false,
+                    recurrenceInterval: null,
+                    nextOccurrence: null,
                     currency: transaction.currency,
                     source: transaction.source,
                 });
+
                 await newTransaction.save();
 
                 const userOwner = await User.findById(transaction.user);
                 userOwner.transactions.unshift(newTransaction._id);
                 await userOwner.save();
                 
-                transaction.nextOccurrence = newTransaction.nextOccurrence;
+                const newNextOccurrence = calculateNextOccurrence(transaction.recurrenceInterval, transaction.nextOccurrence);
+                transaction.nextOccurrence = newNextOccurrence;
                 await transaction.save();
             }
         }
