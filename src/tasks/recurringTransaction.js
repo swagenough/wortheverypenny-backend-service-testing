@@ -12,6 +12,8 @@ const recurringTransaction = async () => {
             if (moment().isSameOrAfter(moment(transaction.nextOccurrence))) {
                 console.log({
                     msg: "Transaksi valid",
+                    moment_time: moment(),
+                    transaction_time: moment(transaction.nextOccurrence),
                     idUser: transaction.user
                 })
                 const newTransaction = new Transaction({
