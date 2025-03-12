@@ -14,30 +14,29 @@ const recurringTransaction = async () => {
                     msg: "Transaksi valid",
                     idUser: transaction.user
                 })
-                // const newTransaction = new Transaction({
-                //     user: transaction.user,
-                //     date: moment().tz('Asia/Jakarta').toDate(),
-                //     name: transaction.name,
-                //     amount: transaction.amount,
-                //     tags: transaction.tags,
-                //     type: transaction.type,
-                //     description: transaction.description,
-                //     category: transaction.category,
-                //     recurring: transaction.recurring,
-                //     recurrenceInterval: transaction.recurrenceInterval,
-                //     nextOccurrence: calculateNextOccurrence(transaction.recurrenceInterval, transaction.nextOccurrence),
-                //     currency: transaction.currency,
-                //     source: transaction.source,
-                // });
-                // console.log({newTransaction});
-                // await newTransaction.save();
+                const newTransaction = new Transaction({
+                    user: transaction.user,
+                    date: moment().tz('Asia/Jakarta').toDate(),
+                    name: transaction.name,
+                    amount: transaction.amount,
+                    tags: transaction.tags,
+                    type: transaction.type,
+                    description: transaction.description,
+                    category: transaction.category,
+                    recurring: transaction.recurring,
+                    recurrenceInterval: transaction.recurrenceInterval,
+                    nextOccurrence: calculateNextOccurrence(transaction.recurrenceInterval, transaction.nextOccurrence),
+                    currency: transaction.currency,
+                    source: transaction.source,
+                });
+                await newTransaction.save();
 
-                // const userOwner = await User.findById(transaction.user);
-                // userOwner.transactions.unshift(newTransaction._id);
-                // await userOwner.save();
+                const userOwner = await User.findById(transaction.user);
+                userOwner.transactions.unshift(newTransaction._id);
+                await userOwner.save();
                 
-                // transaction.nextOccurrence = newTransaction.nextOccurrence;
-                // await transaction.save();
+                transaction.nextOccurrence = newTransaction.nextOccurrence;
+                await transaction.save();
             }
         }
     } catch (error) {
