@@ -21,20 +21,19 @@ const recurringTransaction = async () => {
                     description: transaction.description,
                     category: transaction.category,
                     recurring: false,
-                    recurrenceInterval: null,
+                    recurrenceInterval: transaction.recurrenceInterval,
                     nextOccurrence: null,
                     currency: transaction.currency,
                     source: transaction.source,
                 });
+                await newTransaction.save();
 
                 console.log({
-                    msg: "Recurring Transaction (10 seconds)",
+                    msg: `Recurring Transaction (${transaction.recurrenceInterval})`,
                     moment_time: moment(),
                     transaction_time: moment(transaction.nextOccurrence),
                     newTransaction
                 })
-
-                await newTransaction.save();
 
                 const userOwner = await User.findById(transaction.user);
                 userOwner.transactions.unshift(newTransaction._id);
