@@ -10,13 +10,6 @@ const recurringTransaction = async () => {
         const recurringTransactions = await Transaction.find({ recurring: true });
         for (const transaction of recurringTransactions) {
             if (moment().isSameOrAfter(moment(transaction.nextOccurrence))) {
-
-                console.log({
-                    msg: "Recurring Transaction (10 seconds)",
-                    moment_time: moment(),
-                    transaction_time: moment(transaction.nextOccurrence),
-                    newTransaction
-                })
                 
                 const newTransaction = new Transaction({
                     user: transaction.user,
@@ -33,6 +26,13 @@ const recurringTransaction = async () => {
                     currency: transaction.currency,
                     source: transaction.source,
                 });
+
+                console.log({
+                    msg: "Recurring Transaction (10 seconds)",
+                    moment_time: moment(),
+                    transaction_time: moment(transaction.nextOccurrence),
+                    newTransaction
+                })
 
                 await newTransaction.save();
 
