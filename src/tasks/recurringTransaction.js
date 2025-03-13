@@ -28,13 +28,6 @@ const recurringTransaction = async () => {
                 });
                 await newTransaction.save();
 
-                console.log({
-                    msg: `Recurring Transaction (${transaction.recurrenceInterval})`,
-                    moment_time: moment(),
-                    transaction_time: moment(transaction.nextOccurrence),
-                    newTransaction
-                })
-
                 const userOwner = await User.findById(transaction.user);
                 userOwner.transactions.unshift(newTransaction._id);
                 await userOwner.save();
@@ -64,16 +57,13 @@ function calculateNextOccurrence(interval, currentDate) {
         case 'yearly':
             date.setFullYear(date.getFullYear() + 1);
             break;
-        case '30-seconds':
-            date.setSeconds(date.getSeconds() + 30);
-            break;
         default:
             throw new Error('Invalid recurrence interval');
     }
     return moment(date).tz('Asia/Jakarta').toDate();
 }
 
-cron.schedule('*/15 * * * * *', () => {
+cron.schedule('0 0 * * *', () => {
     console.log('STARTED Recurring transactions...');
     recurringTransaction();
 });
