@@ -159,25 +159,21 @@ const deleteUser = async (req, res) => {
     try {
         const userId = req.id;
 
-        const user = await User.findById(userId);
+        const user = await User.findById(userId).populate([
+            'transactions',
+            'monthlyReport',
+            'bankAccount',
+        ]);
 
         if (!user) {
             return res.status(404).json({ msg: 'User not found' });
         }
 
-        await Transaction.deleteMany({ user: userId });
-
-        await MonthlyReport.deleteMany({ user: userId });
-
-        await Subscription.deleteMany({ user: userId });
-
-        await BankAccount.deleteMany({ user: userId });
-
-        await Bill.deleteMany({ user: userId });
-
-        await GoalWallet.deleteMany({ user: userId });
-
-        await Notification.deleteMany({ user: userId });
+        await Promise.all([
+            Transaction.deleteMany({ _id: { $in: user.transactions } }),
+            MonthlyReport.deleteMany({ _id: { $in: user.monthlyReport } }),
+            BankAccount.deleteMany({ _id: { $in: user.bankAccount } }),
+        ]);
 
         await User.findByIdAndDelete(userId);
 
